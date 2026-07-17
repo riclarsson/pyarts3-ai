@@ -14,4 +14,4 @@ pip install -e .
 
 | Dependency | Description |
 |------------|-------------|
-| `pyarts3`  | Core ARTS library for AI interaction |
+| `pyarts3`  | Core ARTS library |
