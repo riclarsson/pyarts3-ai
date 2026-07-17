@@ -4,7 +4,7 @@ A Python library that allows AI tools to use **ARTS**
 interactively via a generic interfaces that can be
 called .
 
-## Installationpip
+## Installation
 
 ```bash
 pip install -e .
