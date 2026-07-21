@@ -83,7 +83,7 @@ def describe(names: list[str], descriptions: list[str]) -> list[dict[str, str]]:
 
 def index(embed_model: SentenceTransformer,
           descriptions: list[dict[str, str]],
-          split_sentences) -> list[dict[str, str, str]]:
+          split_sentences: bool) -> list[dict[str, str, str]]:
     """
     Indexes the descriptions of the variables in the index using the embedding model.
 
