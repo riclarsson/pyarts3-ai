@@ -2,7 +2,12 @@ import pyarts3_ai.embedding as embedding
 import pyarts3 as pa
 
 
-__all__ = ["startup", "direct_search", "cross_search"]
+__all__ = ["startup",
+           "direct_search",
+           "cross_search",
+           "exists",
+           "get_description",
+           ]
 
 
 _descriptions = None
@@ -63,7 +68,7 @@ def startup(model_name: str = 'all-mpnet-base-v2',
 
 
 def direct_search(user_query: str,
-                  top_k: int = 5) -> list[dict[str, str, str]]:
+                  top_k: int = 5) -> list[dict]:
     """
     Performs a direct search on the WSMs based on the user query.
 
@@ -72,7 +77,7 @@ def direct_search(user_query: str,
         top_k (int): The number of top results to return.
 
     Returns:
-        list[dict[str, str, str]]: A list of dictionaries containing the top-k search results.
+        list[dict]: A list of dictionaries containing the top-k search results.
     """
 
     assert _embed_model is not None, "Embeddings must be set before performing a search."
@@ -83,7 +88,7 @@ def direct_search(user_query: str,
 
 
 def cross_search(user_query: str,
-                 top_k: int = 5) -> list[dict[str, str, str]]:
+                 top_k: int = 5) -> list[dict]:
     """
     Performs a cross-rank search on the WSMs based on the user query.
 
@@ -92,7 +97,7 @@ def cross_search(user_query: str,
         top_k (int): The number of top results to return.
 
     Returns:
-        list[dict[str, str, str]]: A list of dictionaries containing the top-k search results.
+        list[dict]: A list of dictionaries containing the top-k search results.
     """
 
     assert _embed_model is not None, "Embeddings must be set before performing a search."
@@ -100,3 +105,31 @@ def cross_search(user_query: str,
 
     return embedding.cross_search(
         embed_model=_embed_model, index=_index, user_query=user_query, top_k=top_k)
+
+
+def exists(name: str) -> bool:
+    """
+    Checks if a WSM with the given name exists.
+
+    Args:
+        name (str): The name of the WSM to check.
+
+    Returns:
+        bool: True if the WSM exists, False otherwise.
+    """
+    _set_descriptions()
+    return name in _descriptions
+
+
+def get_description(name: str) -> str:
+    """
+    Returns the description of a specific WSM.
+
+    Args:
+        name (str): The name of the WSM to retrieve.
+
+    Returns:
+        str: The description of the WSA, or an empty string if it doesn't exist.
+    """
+    _set_descriptions()
+    return _descriptions.get(name, {"desc": ""})['desc']

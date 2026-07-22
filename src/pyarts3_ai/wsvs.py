@@ -2,7 +2,12 @@ import pyarts3_ai.embedding as embedding
 import pyarts3 as pa
 
 
-__all__ = ["startup", "direct_search", "cross_search"]
+__all__ = ["startup",
+           "direct_search",
+           "cross_search",
+           "exists",
+           "get_description",
+           ]
 
 
 _descriptions = None
@@ -100,3 +105,31 @@ def cross_search(user_query: str,
 
     return embedding.cross_search(
         embed_model=_embed_model, index=_index, user_query=user_query, top_k=top_k)
+
+
+def exists(name: str) -> bool:
+    """
+    Checks if a WSV with the given name exists.
+
+    Args:
+        name (str): The name of the WSV to check.
+
+    Returns:
+        bool: True if the WSV exists, False otherwise.
+    """
+    _set_descriptions()
+    return name in _descriptions
+
+
+def get_description(name: str) -> str:
+    """
+    Returns the description of a specific WSV.
+
+    Args:
+        name (str): The name of the WSV to retrieve.
+
+    Returns:
+        str: The description of the WSV, or an empty string if it doesn't exist.
+    """
+    _set_descriptions()
+    return _descriptions.get(name, {"desc": ""})['desc']
