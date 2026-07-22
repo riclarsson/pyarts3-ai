@@ -123,7 +123,8 @@ def index(embed_model: SentenceTransformer,
 def direct_search(embed_model: SentenceTransformer,
                   index: list[dict[str, str, str]],
                   user_query: str,
-                  top_k: int = 5) -> list[dict]:
+                  top_k: int = 5,
+                  type="Unknown") -> list[dict]:
     """
     Performs a direct search on the indexed descriptions using cosine similarity.
 
@@ -132,6 +133,7 @@ def direct_search(embed_model: SentenceTransformer,
         index (list[dict[str, str, str]]): The indexed descriptions of the variables.
         user_query (str): The user's query to search for.
         top_k (int): The number of top results to return.
+        type (str): The type of the search.
 
     Returns:
         list[dict]: A list of the top_k most relevant variable descriptions based on the user's query.
@@ -150,6 +152,7 @@ def direct_search(embed_model: SentenceTransformer,
         best_match_score = np.max(sims)
         # Store the best match score for later use
         var['direct_score'] = best_match_score
+        var['type'] = type
         candidate_scores.append(var)
 
     # Sort by the best sentence match
@@ -162,7 +165,8 @@ def direct_search(embed_model: SentenceTransformer,
 def cross_search(embed_model: SentenceTransformer,
                  index: list[dict[str, str, str]],
                  user_query: str,
-                 top_k: int = 5) -> list[dict]:
+                 top_k: int = 5,
+                 type="Unknown") -> list[dict]:
     """
     Performs a cross-search by first doing a direct search and then re-ranking the top candidates using the cross-encoder model.
 
@@ -175,6 +179,7 @@ def cross_search(embed_model: SentenceTransformer,
         index (list[dict[str, str, str]]): The indexed descriptions of the variables.
         user_query (str): The user's query to search for.
         top_k (int): The number of top results to return.
+        type (str): The type of the search.
 
     Returns:
         list[dict]: A list of the top_k most relevant variable descriptions based on the user's query, re-ranked by the cross-encoder model.
@@ -182,7 +187,8 @@ def cross_search(embed_model: SentenceTransformer,
     top_candidates = direct_search(embed_model=embed_model,
                                    index=index,
                                    user_query=user_query,
-                                   top_k=top_k)
+                                   top_k=top_k,
+                                   type=type)
 
     pairs = [[user_query, cand["desc"]] for cand in top_candidates]
     cross_scores = _cross_model.predict(pairs)

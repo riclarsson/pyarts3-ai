@@ -137,7 +137,7 @@ def direct_search(user_query: str,
     assert _index is not None, "Index must be set before performing a search."
 
     return embedding.direct_search(
-        embed_model=_embed_model, index=_index, user_query=user_query, top_k=top_k)
+        embed_model=_embed_model, index=_index, user_query=user_query, top_k=top_k, type="Pure Python ARTS3 Functionality")
 
 
 def cross_search(user_query: str,
@@ -157,7 +157,7 @@ def cross_search(user_query: str,
     assert _index is not None, "Index must be set before performing a search."
 
     return embedding.cross_search(
-        embed_model=_embed_model, index=_index, user_query=user_query, top_k=top_k)
+        embed_model=_embed_model, index=_index, user_query=user_query, top_k=top_k, type="Pure Python ARTS3 Functionality")
 
 
 def exists(name: str) -> bool:
