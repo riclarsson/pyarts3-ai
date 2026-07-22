@@ -1,7 +1,8 @@
 """
 AI search engine for pyarts3
 
-providing direct and cross-rank search capabilities across various workspace entities such as variables, methods, agendas, groups, and scenarios."""
+providing direct and cross-rank search capabilities across various workspace entities such as variables, methods, agendas, groups, and scenarios
+"""
 
 def __getattr__(attr):
     if attr == "wsvs":
@@ -43,7 +44,12 @@ def __dir__():
         "wsgs",
         "wssns",
         "pafun",
-        "embedding"
+        "embedding",
+        "exists",
+        "get_description",
+        "direct_search",
+        "cross_search",
+        "startup",
     ]
 
 

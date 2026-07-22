@@ -118,7 +118,10 @@ def exists(name: str) -> bool:
         bool: True if the WSA exists, False otherwise.
     """
     _set_descriptions()
-    return name in _descriptions
+    for d in _descriptions:
+        if d['name'] == name:
+            return True
+    return False
 
 
 def get_description(name: str) -> str:
@@ -132,4 +135,7 @@ def get_description(name: str) -> str:
         str: The description of the WSA, or an empty string if it doesn't exist.
     """
     _set_descriptions()
-    return _descriptions.get(name, {"desc": ""})['desc']
+    for d in _descriptions:
+        if d['name'] == name:
+            return d['desc']
+    return ""

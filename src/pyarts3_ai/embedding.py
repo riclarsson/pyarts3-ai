@@ -145,12 +145,12 @@ def direct_search(embed_model: SentenceTransformer,
 
     # Search across every sentence of every variable
     for var in index:
-        # Calculate similarity between query and all sentences of this variable
-        sims = cosine_similarity(query_vec, var["embeddings"])[0]
-
-        # Take the MAX score among all sentences (the 'best' match)
-        best_match_score = np.max(sims)
-        # Store the best match score for later use
+        if user_query == var["name"]:
+            best_match_score = 1.0
+        else:
+            sims = cosine_similarity(query_vec, var["embeddings"])[0]
+            best_match_score = np.max(sims)
+        
         var['direct_score'] = best_match_score
         var['type'] = type
         candidate_scores.append(var)
@@ -193,7 +193,10 @@ def cross_search(embed_model: SentenceTransformer,
     pairs = [[user_query, cand["desc"]] for cand in top_candidates]
     cross_scores = _cross_model.predict(pairs)
 
-    for i in range(len(top_candidates)):
-        top_candidates[i]['final_score'] = cross_scores[i]
+    for i in range(len(top_candidates)):    
+        if top_candidates[i]["name"] == user_query:
+            top_candidates[i]['final_score'] = 16.0
+        else:
+            top_candidates[i]['final_score'] = cross_scores[i]
 
     return sorted(top_candidates, key=lambda x: x['final_score'], reverse=True)
