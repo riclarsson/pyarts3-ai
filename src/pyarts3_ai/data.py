@@ -13,7 +13,7 @@ __all__ = ["startup",
            ]
 
 
-_descriptions = None
+_data = None
 _index = None
 _embed_model = None
 
@@ -29,7 +29,7 @@ def _digdeeper(start, paths=None, res=None) -> dict:
     if paths is None:
         paths = pa.arts.globals.parameters.datapath
 
-    for path in  paths:
+    for path in paths:
         if path.startswith('.'):
             continue
 
@@ -52,11 +52,9 @@ def _set_descriptions() -> None:
     """
     Initializes the pyarts3 functionality if they haven't been set yet.
     """
-    global _descriptions
-    if _descriptions is None:
-        files = _digdeeper(time.time())
-        _descriptions = embedding.describe(names=[n for n in files],
-                                           descriptions=[files[n] for n in files])
+    global _data
+    if _data is None:
+        _data = _digdeeper(time.time())
 
 
 def _set_index(split_sentences: bool,
@@ -68,14 +66,15 @@ def _set_index(split_sentences: bool,
         split_sentences (bool): Whether to split descriptions into individual sentences.
         clean_run (bool): Whether to perform a clean run and re-index all descriptions.
     """
-    global _index
+    global _index, _data
     _set_descriptions()
 
     assert _embed_model is not None, "Embeddings must be set before indexing."
 
     if _index is None or clean_run:
         _index = embedding.index(embed_model=_embed_model,
-                                 descriptions=_descriptions,
+                                 descriptions=embedding.describe(names=[n for n in _data],
+                                                                 descriptions=[_data[n] for n in _data]),
                                  split_sentences=split_sentences)
 
 
@@ -151,7 +150,8 @@ def exists(name: str) -> bool:
         bool: True if the pyarts3 functionality exists, False otherwise.
     """
     _set_descriptions()
-    return name in _descriptions
+    global _data
+    return name in _data
 
 
 def get_description(name: str) -> str:
@@ -165,7 +165,8 @@ def get_description(name: str) -> str:
         str: The description of the pyarts3 functionality, or an empty string if it doesn't exist.
     """
     _set_descriptions()
-    return _descriptions.get(name, "")
+    global _data
+    return _data.get(name, "")
 
 
 def get_short_description(name: str) -> str:
@@ -179,4 +180,5 @@ def get_short_description(name: str) -> str:
         str: The short description of the pyarts3 functionality, or an empty string if it doesn't exist.
     """
     _set_descriptions()
-    return _descriptions.get(name, "").split('\n')[0]
+    global _data
+    return _data.get(name, "").split('\n')[0]

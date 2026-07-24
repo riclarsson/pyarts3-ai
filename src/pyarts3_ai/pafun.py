@@ -101,7 +101,7 @@ def _set_index(split_sentences: bool,
 
 def startup(model_name: str = 'all-mpnet-base-v2',
             cross_model_name: str = 'cross-encoder/ms-marco-MiniLM-L-6-v2',
-            split_sentences: bool = True,
+            split_sentences: bool = False,
             clean_run: bool = False) -> None:
     """
     Initializes the pyarts3 functionality, embeddings, and index.
@@ -223,9 +223,10 @@ def get_group_api(name: str) -> dict:
     Returns:
         dict: A dictionary containing the Workspace Group and Python API of the WSV, or an empty dictionary if it doesn't exist.
     """
-    _set_descriptions()
-    global _wsgs
-    if name not in _wsgs:
-        return dict()
-    return {"Workspace Group": name,
-            "Python API": str(dir(eval(name)))}
+    try:
+        pyarts3 = pa
+        x = eval(name)
+        return {"Workspace Group": name,
+                "Python API": dir(x)}
+    except Exception:
+        return ""
