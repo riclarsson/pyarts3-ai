@@ -7,10 +7,12 @@ __all__ = ["startup",
            "cross_search",
            "exists",
            "get_description",
+           "get_short_description",
+           "get_group_api",
            ]
 
 
-_descriptions = None
+_wsgs = None
 _index = None
 _embed_model = None
 
@@ -19,11 +21,9 @@ def _set_descriptions() -> None:
     """
     Initializes the WSGs if they haven't been set yet.
     """
-    global _descriptions
-    if _descriptions is None:
-        wsgs = pa.arts.globals.workspace_groups()
-        _descriptions = embedding.describe(names=[n for n in wsgs],
-                                           descriptions=[wsgs[n].desc for n in wsgs])
+    global _wsgs
+    if _wsgs is None:
+        _wsgs = pa.arts.globals.workspace_groups()
 
 
 def _set_index(split_sentences: bool,
@@ -35,14 +35,15 @@ def _set_index(split_sentences: bool,
         split_sentences (bool): Whether to split descriptions into individual sentences.
         clean_run (bool): Whether to perform a clean run and re-index all descriptions.
     """
-    global _index
+    global _index, _wsgs
     _set_descriptions()
 
     assert _embed_model is not None, "Embeddings must be set before indexing."
 
     if _index is None or clean_run:
         _index = embedding.index(embed_model=_embed_model,
-                                 descriptions=_descriptions,
+                                 descriptions=embedding.describe(names=[ws for ws in _wsgs],
+                                                                 descriptions=[_wsgs[ws].desc for ws in _wsgs]),
                                  split_sentences=split_sentences)
 
 
@@ -80,6 +81,8 @@ def direct_search(user_query: str,
         list[dict]: A list of dictionaries containing the top-k search results.
     """
 
+    global _embed_model, _index
+
     assert _embed_model is not None, "Embeddings must be set before performing a search."
     assert _index is not None, "Index must be set before performing a search."
 
@@ -100,6 +103,8 @@ def cross_search(user_query: str,
         list[dict]: A list of dictionaries containing the top-k search results.
     """
 
+    global _embed_model, _index
+
     assert _embed_model is not None, "Embeddings must be set before performing a search."
     assert _index is not None, "Index must be set before performing a search."
 
@@ -118,10 +123,8 @@ def exists(name: str) -> bool:
         bool: True if the WSG exists, False otherwise.
     """
     _set_descriptions()
-    for d in _descriptions:
-        if d['name'] == name:
-            return True
-    return False
+    global _wsgs
+    return name in _wsgs
 
 
 def get_description(name: str) -> str:
@@ -135,7 +138,41 @@ def get_description(name: str) -> str:
         str: The description of the WSG, or an empty string if it doesn't exist.
     """
     _set_descriptions()
-    for d in _descriptions:
-        if d['name'] == name:
-            return d['desc']
-    return ""
+    global _wsgs
+    if name not in _wsgs:
+        return ""
+    return eval(f"pa.arts.{name}.__doc__")
+
+
+def get_short_description(name: str) -> str:
+    """
+    Returns the short description of a specific WSG.
+
+    Args:
+        name (str): The name of the WSG to retrieve.
+
+    Returns:
+        str: The short description of the WSG, or an empty string if it doesn't exist.
+    """
+    _set_descriptions()
+    global _wsgs
+    if name not in _wsgs:
+        return ""
+    return _wsgs[name].desc.split('\n')[0]
+
+def get_group_api(name: str) -> dict:
+    """
+    Returns the python API of a specific WSG.
+
+    Args:
+        name (str): The name of the WSG to retrieve.
+
+    Returns:
+        dict: A dictionary containing the Workspace Group and Python API of the WSG, or an empty dictionary if it doesn't exist.
+    """
+    _set_descriptions()
+    global _wsgs
+    if name not in _wsgs:
+        return dict()
+    return {"Workspace Group": name,
+            "Python API": str(dir(eval(f"pa.arts.{name}")))}

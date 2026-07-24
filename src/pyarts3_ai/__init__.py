@@ -4,6 +4,7 @@ AI search engine for pyarts3
 providing direct and cross-rank search capabilities across various workspace entities such as variables, methods, agendas, groups, and scenarios
 """
 
+
 def __getattr__(attr):
     if attr == "wsvs":
         import pyarts3_ai.wsvs as wsvs
@@ -21,13 +22,13 @@ def __getattr__(attr):
         import pyarts3_ai.wsgs as wsgs
         return wsgs
 
-    if attr == "wssns":
-        import pyarts3_ai.wssns as wssns
-        return wssns
-
     if attr == "pafun":
         import pyarts3_ai.pafun as pafun
         return pafun
+
+    if attr == "data":
+        import pyarts3_ai.data as data
+        return data
 
     if attr == "embedding":
         import pyarts3_ai.embedding as embedding
@@ -42,14 +43,16 @@ def __dir__():
         "wsms",
         "wsas",
         "wsgs",
-        "wssns",
         "pafun",
+        "data",
         "embedding",
         "exists",
         "get_description",
+        "get_short_description",
         "direct_search",
         "cross_search",
         "startup",
+        "group_api",
     ]
 
 
@@ -64,15 +67,41 @@ def exists(name: str) -> bool:
         bool: True if the entity exists, False otherwise.
     """
 
-    from pyarts3_ai import wsas, wsgs, wsms, wssns, wsvs, pafun
+    from pyarts3_ai import wsas, wsgs, wsms, wsvs, pafun, data
 
     return \
         wsvs.exists(name) or \
         wsms.exists(name) or \
         wsas.exists(name) or \
         wsgs.exists(name) or \
-        wssns.exists(name) or \
-        pafun.exists(name)
+        pafun.exists(name) or \
+        data.exists(name)
+
+
+def group_api(name: str) -> str:
+    """
+    Returns the API information of a specific workspace variable, method, agenda, group, or scenario.
+
+    Args:
+        name (str): The name of the workspace entity to retrieve.
+
+    Returns:
+        str: The API information of the entity, or an empty string if it doesn't exist.
+    """
+
+    from pyarts3_ai import wsgs, wsvs, pafun
+
+    if wsgs.exists(name):
+        return wsgs.get_group_api(name)
+
+    if pafun.exists(name):
+        return pafun.get_group_api(name)
+
+    # Keep second to last as it may collide with wsas
+    if wsvs.exists(name):
+        return wsvs.get_group_api(name)
+
+    return ""
 
 
 def get_description(name: str) -> str:
@@ -86,28 +115,63 @@ def get_description(name: str) -> str:
         str: The description of the entity, or an empty string if it doesn't exist.
     """
 
-    from pyarts3_ai import wsas, wsgs, wsms, wssns, wsvs, pafun
+    from pyarts3_ai import wsas, wsgs, wsms, wsvs, pafun, data
 
     # Keep first as agendas are special and may collide with other names
     if wsas.exists(name):
         return wsas.get_description(name)
-    
+
     if wsgs.exists(name):
         return wsgs.get_description(name)
-    
+
     if wsms.exists(name):
         return wsms.get_description(name)
-    
+
     if pafun.exists(name):
         return pafun.get_description(name)
-    
+
+    if data.exists(name):
+        return data.get_description(name)
+
     # Keep second to last as it may collide with wsas
     if wsvs.exists(name):
         return wsvs.get_description(name)
-    
-    # Keep last as it may collide with wsvs
-    if wssns.exists(name):
-        return wssns.get_description(name)
+
+    return ""
+
+
+def get_short_description(name: str) -> str:
+    """
+    Returns the short description of a specific workspace variable, method, agenda, group, or scenario.
+
+    Args:
+        name (str): The name of the workspace entity to retrieve.
+
+    Returns:
+        str: The short description of the entity, or an empty string if it doesn't exist.
+    """
+
+    from pyarts3_ai import wsas, wsgs, wsms, wsvs, pafun, data
+
+    # Keep first as agendas are special and may collide with other names
+    if wsas.exists(name):
+        return wsas.get_short_description(name)
+
+    if wsgs.exists(name):
+        return wsgs.get_short_description(name)
+
+    if wsms.exists(name):
+        return wsms.get_short_description(name)
+
+    if pafun.exists(name):
+        return pafun.get_short_description(name)
+
+    if data.exists(name):
+        return data.get_short_description(name)
+
+    # Keep second to last as it may collide with wsas
+    if wsvs.exists(name):
+        return wsvs.get_short_description(name)
 
     return ""
 
@@ -126,7 +190,7 @@ def startup(model_name: str = 'all-mpnet-base-v2',
         clean_run (bool): Whether to perform a clean run and re-index all descriptions.
     """
 
-    from pyarts3_ai import wsas, wsgs, wsms, wssns, wsvs, pafun
+    from pyarts3_ai import wsas, wsgs, wsms, wsvs, pafun, data
 
     wsas.startup(model_name=model_name,
                  cross_model_name=cross_model_name,
@@ -140,10 +204,6 @@ def startup(model_name: str = 'all-mpnet-base-v2',
                  cross_model_name=cross_model_name,
                  split_sentences=split_sentences,
                  clean_run=clean_run)
-    wssns.startup(model_name=model_name,
-                  cross_model_name=cross_model_name,
-                  split_sentences=split_sentences,
-                  clean_run=clean_run)
     wsvs.startup(model_name=model_name,
                  cross_model_name=cross_model_name,
                  split_sentences=split_sentences,
@@ -152,10 +212,14 @@ def startup(model_name: str = 'all-mpnet-base-v2',
                   cross_model_name=cross_model_name,
                   split_sentences=split_sentences,
                   clean_run=clean_run)
+    data.startup(model_name=model_name,
+                 cross_model_name=cross_model_name,
+                 split_sentences=split_sentences,
+                 clean_run=clean_run)
 
 
 def direct_search(user_query: str,
-                 top_k: int = 5) -> list[dict]:
+                  top_k: int = 5) -> list[dict]:
     """
     Performs a direct search on the WSAs based on the user query.
 
@@ -170,15 +234,15 @@ def direct_search(user_query: str,
         list[dict]: A list of dictionaries containing the top-k search results.
     """
 
-    from pyarts3_ai import wsas, wsgs, wsms, wssns, wsvs, pafun
+    from pyarts3_ai import wsas, wsgs, wsms, wsvs, pafun, data
 
     results = []
     results.extend(wsas.direct_search(user_query=user_query, top_k=top_k))
     results.extend(wsgs.direct_search(user_query=user_query, top_k=top_k))
     results.extend(wsms.direct_search(user_query=user_query, top_k=top_k))
-    results.extend(wssns.direct_search(user_query=user_query, top_k=top_k))
     results.extend(wsvs.direct_search(user_query=user_query, top_k=top_k))
     results.extend(pafun.direct_search(user_query=user_query, top_k=top_k))
+    results.extend(data.direct_search(user_query=user_query, top_k=top_k))
 
     # Sort the results by score in descending order and return the top_k results
     results.sort(key=lambda x: x['direct_score'], reverse=True)
@@ -201,19 +265,20 @@ def cross_search(user_query: str,
         list[dict]: A list of dictionaries containing the top-k search results.
     """
 
-    from pyarts3_ai import wsas, wsgs, wsms, wssns, wsvs, pafun
+    from pyarts3_ai import wsas, wsgs, wsms, wsvs, pafun, data
 
     results = []
     results.extend(wsas.cross_search(user_query=user_query, top_k=top_k))
     results.extend(wsgs.cross_search(user_query=user_query, top_k=top_k))
     results.extend(wsms.cross_search(user_query=user_query, top_k=top_k))
-    results.extend(wssns.cross_search(user_query=user_query, top_k=top_k))
     results.extend(wsvs.cross_search(user_query=user_query, top_k=top_k))
     results.extend(pafun.cross_search(user_query=user_query, top_k=top_k))
+    results.extend(data.cross_search(user_query=user_query, top_k=top_k))
 
     # Sort the results by score in descending order and return the top_k results
     results.sort(key=lambda x: x['final_score'], reverse=True)
     return results[:top_k]
+
 
 __all__ = [s for s in dir() if not s.startswith("_")]
 __version__ = "0.0.1"

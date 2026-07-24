@@ -1,5 +1,7 @@
 import pyarts3_ai.embedding as embedding
 import pyarts3 as pa
+import os
+import time
 
 
 __all__ = ["startup",
@@ -7,6 +9,7 @@ __all__ = ["startup",
            "cross_search",
            "exists",
            "get_description",
+           "get_short_description",
            ]
 
 
@@ -15,21 +18,51 @@ _index = None
 _embed_model = None
 
 
+def _digdeeper(start, paths=None, res=None) -> dict:
+    if res is None:
+        res = {}
+
+    if (time.time() - start) >= 120:
+        print("Timeout reached while digging deeper into pyarts3 functionality.")
+        return res
+
+    if paths is None:
+        paths = pa.arts.globals.parameters.datapath
+
+    for path in  paths:
+        if path.startswith('.'):
+            continue
+
+        if os.path.isdir(path):
+            x = []
+            for fname in os.listdir(path):
+                if not fname.startswith('.'):
+                    x.append(os.path.join(path, fname))
+            res = _digdeeper(paths=x, res=res, start=start)
+        else:
+            if "readme" in path.lower():
+                with open(path, 'r') as f:
+                    content = f.read()
+                res[path] = content
+
+    return res
+
+
 def _set_descriptions() -> None:
     """
-    Initializes the WSSNs if they haven't been set yet.
+    Initializes the pyarts3 functionality if they haven't been set yet.
     """
     global _descriptions
     if _descriptions is None:
-        wssns = pa.arts.globals.workspace_variables_shortnames()
-        _descriptions = embedding.describe(names=[n for n in wssns],
-                                           descriptions=[wssns[n].desc for n in wssns])
+        files = _digdeeper(time.time())
+        _descriptions = embedding.describe(names=[n for n in files],
+                                           descriptions=[files[n] for n in files])
 
 
 def _set_index(split_sentences: bool,
                clean_run: bool) -> None:
     """
-    Initializes the WSSNs index if it hasn't been set yet.
+    Initializes the pyarts3 functionality index if it hasn't been set yet.
 
     Args:
         split_sentences (bool): Whether to split descriptions into individual sentences.
@@ -51,7 +84,7 @@ def startup(model_name: str = 'all-mpnet-base-v2',
             split_sentences: bool = True,
             clean_run: bool = False) -> None:
     """
-    Initializes the WSSNs, embeddings, and index.
+    Initializes the pyarts3 functionality, embeddings, and index.
 
     Args:
         model_name (str): The name of the embedding model to use.
@@ -70,7 +103,7 @@ def startup(model_name: str = 'all-mpnet-base-v2',
 def direct_search(user_query: str,
                   top_k: int = 5) -> list[dict]:
     """
-    Performs a direct search on the WSSNs based on the user query.
+    Performs a direct search on the pyarts3 functionality based on the user query.
 
     Args:
         user_query (str): The user's search query.
@@ -84,13 +117,13 @@ def direct_search(user_query: str,
     assert _index is not None, "Index must be set before performing a search."
 
     return embedding.direct_search(
-        embed_model=_embed_model, index=_index, user_query=user_query, top_k=top_k, type="Workspace Shortname")
+        embed_model=_embed_model, index=_index, user_query=user_query, top_k=top_k, type="Data")
 
 
 def cross_search(user_query: str,
                  top_k: int = 5) -> list[dict]:
     """
-    Performs a cross-rank search on the WSSNs based on the user query.
+    Performs a cross-rank search on the pyarts3 functionality based on the user query.
 
     Args:
         user_query (str): The user's search query.
@@ -104,38 +137,46 @@ def cross_search(user_query: str,
     assert _index is not None, "Index must be set before performing a search."
 
     return embedding.cross_search(
-        embed_model=_embed_model, index=_index, user_query=user_query, top_k=top_k, type="Workspace Shortname")
+        embed_model=_embed_model, index=_index, user_query=user_query, top_k=top_k, type="Data")
 
 
 def exists(name: str) -> bool:
     """
-    Checks if a WSSN with the given name exists.
+    Checks if a pyarts3 functionality with the given name exists.
 
     Args:
-        name (str): The name of the WSSN to check.
+        name (str): The name of the pyarts3 functionality to check.
 
     Returns:
-        bool: True if the WSSN exists, False otherwise.
+        bool: True if the pyarts3 functionality exists, False otherwise.
     """
     _set_descriptions()
-    for d in _descriptions:
-        if d['name'] == name:
-            return True
-    return False
+    return name in _descriptions
 
 
 def get_description(name: str) -> str:
     """
-    Returns the description of a specific WSSN.
+    Returns the description of a specific pyarts3 functionality.
 
     Args:
-        name (str): The name of the WSSN to retrieve.
+        name (str): The name of the pyarts3 functionality to retrieve.
 
     Returns:
-        str: The description of the WSSN, or an empty string if it doesn't exist.
+        str: The description of the pyarts3 functionality, or an empty string if it doesn't exist.
     """
     _set_descriptions()
-    for d in _descriptions:
-        if d['name'] == name:
-            return d['desc']
-    return ""
+    return _descriptions.get(name, "")
+
+
+def get_short_description(name: str) -> str:
+    """
+    Returns the short description of a specific pyarts3 functionality.
+
+    Args:
+        name (str): The name of the pyarts3 functionality to retrieve.
+
+    Returns:
+        str: The short description of the pyarts3 functionality, or an empty string if it doesn't exist.
+    """
+    _set_descriptions()
+    return _descriptions.get(name, "").split('\n')[0]

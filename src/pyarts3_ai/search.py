@@ -6,6 +6,8 @@ if __name__ == "__main__":
 - Type 'help' to display this help message.
 - Type 'exit' to quit the tool.
 - Type 'describe' to get the description of a specific entity by name.
+- Type 'short' to get the short description of a specific entity by name.
+- Type 'group' to get API information from a workspace variable or workspace group.
 - Type 'top-k' to specify the number of top results to return (default is 5).
 
 Otherwise just enter your search query and press Enter to see the results."""
@@ -20,6 +22,8 @@ The search uses a semantic engine, so you can use normal language queries.
 {help}
 """)
 
+  top_k = 5
+
   while True:
     query = input(">>> ")
     if query.lower() == 'exit':
@@ -30,21 +34,25 @@ The search uses a semantic engine, so you can use normal language queries.
         name = name.replace(' ', '')
         print (f"Getting description for entity '{name}':\n")
         print(pyarts3_ai.get_description(name))
+    elif query.lower() == 'short':
+        name = input("short >>> ")
+        name = name.replace(' ', '')
+        print (f"Getting short description for entity '{name}':\n")
+        print(pyarts3_ai.get_short_description(name))
+    elif query.lower() == 'group':
+        name = input("group >>> ")
+        name = name.replace(' ', '')
+        print (f"Getting group API for entity '{name}':\n")
+        print(pyarts3_ai.group_api(name))
     elif query.lower() == 'top-k':
-        top_k = input("Enter the number of top results to return: ")
         try:
-            top_k = int(top_k)
-            while top_k <= 0:
-                print("Please enter a positive integer for top-k.")
-                top_k = input("Enter the number of top results to return: ")
-                top_k = int(top_k)
-        except ValueError:
-            print("Invalid input. Please enter a valid integer for top-k.")
-            continue
+            top_k = max(1, int(input("Enter the number of top results to return: ")))
+        except Exception as e:
+            print(f"Invalid input. Please enter a valid integer for top-k.  Error: {e}")
     elif query.lower() == 'help':
         print(help)
     else:
-        results = pyarts3_ai.cross_search(query)
+        results = pyarts3_ai.cross_search(query, top_k)
         print("Search results:")
         for res in results:
-          print(f"Name: {res['name']}, Type: {res['type']}")
+          print(f"{res['name']} ({res['type']}) - {pyarts3_ai.get_short_description(res['name'])}")

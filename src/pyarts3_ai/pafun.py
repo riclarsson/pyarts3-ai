@@ -7,6 +7,8 @@ __all__ = ["startup",
            "cross_search",
            "exists",
            "get_description",
+           "get_short_description",
+           "get_group_api",
            ]
 
 
@@ -40,7 +42,6 @@ def _digdeeper(v, res=None) -> list[_Type]:
 
     if v not in res:
         if v.__doc__ is None:
-            print(f"Warning: {v.__name__} has no docstring - it is ignored.")
             return res
         res.append(_Type(v.__name__, v.__doc__, v))
 
@@ -61,7 +62,6 @@ def _digdeeper(v, res=None) -> list[_Type]:
             res = _digdeeper(tp, res)
         elif isinstance(tp, _cls) or isinstance(tp, _fun):
             if tp.__doc__ is None:
-                print(f"Warning: {v.__name__ + "." + tp.__name__} has no docstring - it is ignored.")
                 continue
             res.append(_Type(v.__name__ + "." + tp.__name__, tp.__doc__, tp))
 
@@ -137,7 +137,7 @@ def direct_search(user_query: str,
     assert _index is not None, "Index must be set before performing a search."
 
     return embedding.direct_search(
-        embed_model=_embed_model, index=_index, user_query=user_query, top_k=top_k, type="Pure Python ARTS3 Functionality")
+        embed_model=_embed_model, index=_index, user_query=user_query, top_k=top_k, type="Python API")
 
 
 def cross_search(user_query: str,
@@ -157,7 +157,7 @@ def cross_search(user_query: str,
     assert _index is not None, "Index must be set before performing a search."
 
     return embedding.cross_search(
-        embed_model=_embed_model, index=_index, user_query=user_query, top_k=top_k, type="Pure Python ARTS3 Functionality")
+        embed_model=_embed_model, index=_index, user_query=user_query, top_k=top_k, type="Python API")
 
 
 def exists(name: str) -> bool:
@@ -170,11 +170,12 @@ def exists(name: str) -> bool:
     Returns:
         bool: True if the pyarts3 functionality exists, False otherwise.
     """
-    _set_descriptions()
-    for d in _descriptions:
-        if d['name'] == name:
-            return True
-    return False
+    try:
+        pyarts3 = pa
+        eval(name)
+        return True
+    except Exception:
+        return False
 
 
 def get_description(name: str) -> str:
@@ -187,8 +188,44 @@ def get_description(name: str) -> str:
     Returns:
         str: The description of the pyarts3 functionality, or an empty string if it doesn't exist.
     """
+    try:
+        pyarts3 = pa
+        x = eval(name)
+        return x.__doc__ if x.__doc__ else ""
+    except Exception:
+        return ""
+
+
+def get_short_description(name: str) -> str:
+    """
+    Returns the short description of a specific pyarts3 functionality.
+
+    Args:
+        name (str): The name of the pyarts3 functionality to retrieve.
+
+    Returns:
+        str: The short description of the pyarts3 functionality, or an empty string if it doesn't exist.
+    """
+    try:
+        pyarts3 = pa
+        x = eval(name)
+        return x.__doc__.split("\n")[0] if x.__doc__ else ""
+    except Exception:
+        return ""
+
+def get_group_api(name: str) -> dict:
+    """
+    Returns the python API of a specific pyarts3 functionality.
+
+    Args:
+        name (str): The name of the pyarts3 functionality to retrieve.
+
+    Returns:
+        dict: A dictionary containing the Workspace Group and Python API of the WSV, or an empty dictionary if it doesn't exist.
+    """
     _set_descriptions()
-    for d in _descriptions:
-        if d['name'] == name:
-            return d['desc']
-    return ""
+    global _wsgs
+    if name not in _wsgs:
+        return dict()
+    return {"Workspace Group": name,
+            "Python API": str(dir(eval(name)))}
